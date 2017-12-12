@@ -1,0 +1,27 @@
+{
+  "name": "x-validator",
+  "version": "0.0.1",
+  "description": "nodejs params validator",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musicode/x-validator.git"
+  },
+  "keywords": [
+    "node",
+    "param",
+    "validate"
+  ],
+  "author": "musicode",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/musicode/x-validator/issues"
+  },
+  "homepage": "https://github.com/musicode/x-validator#readme",
+  "devDependencies": {
+    "power-assert": "^1.4.4"
+  }
+}
