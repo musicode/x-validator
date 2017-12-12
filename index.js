@@ -278,10 +278,11 @@ class Validator {
         if (type(message) === 'string') {
           errors[ key ] = message
         }
-        // else 必须有 translate 函数
-        // 否则提示个毛啊
-        else {
+        else if (this.translate) {
           errors[ key ] = this.translate(key, data[ key ], errorReason, rule)
+        }
+        else {
+          errors[ key ] = errorReason
         }
       }
 
