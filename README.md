@@ -1,4 +1,4 @@
-# egg-validator
+# x-validator
 
 因为 [parameter](https://github.com/node-modules/parameter) 不够好用，所以按我的想法改进了一版。
 

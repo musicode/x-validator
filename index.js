@@ -239,7 +239,10 @@ class Validator {
 
       switch (type(rule)) {
         case 'string':
-          rule = alias[ rule ]
+          rule = alias[ rule ] || {
+            required: true,
+            type: rule,
+          }
           break
 
         case 'array':
