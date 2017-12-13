@@ -1,19 +1,8 @@
 
 'use strict'
 
-const alias = require('./alias')
-
-const PATTERN_ID = /^\d+$/
-
 const PATTERN_DATE = /^\d{4}\-\d{2}\-\d{2}$/
 const PATTERN_DATE_TIME = /^\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}$/
-
-// http://www.regular-expressions.info/email.html
-const PATTERN_EMAIL = /^[a-z0-9\!\#\$\%\&\'\*\+\/\=\?\^\_\`\{\|\}\~\-]+(?:\.[a-z0-9\!\#\$\%\&\'\*\+\/\=\?\^\_\`\{\|\}\~\-]+)*@(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?$/
-
-// https://gist.github.com/dperini/729294
-const PATTERN_URL = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/i
-
 
 function type(value) {
   return Object.prototype.toString.call(value).toLowerCase().slice(8, -1)
@@ -152,56 +141,6 @@ function checkDateTime(rule, value) {
 
 }
 
-function checkId(rule, value) {
-
-  let props = {
-    type: 'string',
-    pattern: PATTERN_ID,
-  }
-
-  return checkString(extend(rule, props), value)
-
-}
-
-function checkUrl(rule, value) {
-
-  let props = {
-    type: 'string',
-    pattern: PATTERN_URL,
-  }
-
-  return checkString(extend(rule, props), value)
-
-}
-
-function checkEmail(rule, value) {
-
-  let props = {
-    type: 'string',
-    pattern: PATTERN_EMAIL,
-  }
-
-  return checkString(extend(rule, props), value)
-
-}
-
-function checkPassword(rule, value, data) {
-
-  let props = {
-    type: 'string',
-  }
-
-  let error = checkString(extend(rule, props), value)
-  if (error) {
-    return error
-  }
-
-  if (rule.compare && data[ rule.compare ] !== value) {
-    return 'compare'
-  }
-
-}
-
 class Validator {
 
   constructor(translate) {
@@ -217,16 +156,24 @@ class Validator {
       object: checkObject,
       date: checkDate,
       dateTime: checkDateTime,
-      id: checkId,
-      url: checkUrl,
-      email: checkEmail,
-      password: checkPassword,
     }
+    this.messages = { }
     this.translate = translate
   }
 
-  add(name, handler) {
-    this.rules[ name ] = handler
+  add(name, handler, messages) {
+
+    if (type(name) === 'object') {
+      Object.assign(this.rules, name)
+      if (type(handler) === 'object') {
+        Object.assign(this.messages, handler)
+      }
+    }
+    else {
+      this.rules[ name ] = handler
+      this.messages[ name ] = messages
+    }
+
   }
 
   validate(data, rules, messages) {
@@ -239,18 +186,23 @@ class Validator {
 
       switch (type(rule)) {
         case 'string':
-          rule = alias[ rule ] || {
-            required: true,
+          rule = {
             type: rule,
           }
           break
 
         case 'array':
-          rule = extend(alias.enum, { values: rule })
+          rule = {
+            type: 'enum',
+            values: rule,
+          }
           break
 
         case 'regexp':
-          rule = extend(alias.pattern, { pattern: rule })
+          rule = {
+            type: 'string',
+            pattern: rule,
+          }
           break
       }
 
@@ -274,7 +226,12 @@ class Validator {
       }
 
       if (errorReason) {
+
         let message = messages && messages[ key ] && messages[ key ][ errorReason ]
+        if (type(message) !== 'string') {
+          message = this.messages[ rule.type ] && this.messages[ rule.type ][ errorReason ]
+        }
+
         if (type(message) === 'string') {
           errors[ key ] = message
         }
@@ -284,6 +241,7 @@ class Validator {
         else {
           errors[ key ] = errorReason
         }
+
       }
 
     }
@@ -296,4 +254,15 @@ class Validator {
 
 }
 
-module.exports = Validator
+module.exports = {
+  Validator,
+  checkInteger,
+  checkNumber,
+  checkString,
+  checkBoolean,
+  checkDate,
+  checkDateTime,
+  checkEnum,
+  checkObject,
+  checkArray,
+}
