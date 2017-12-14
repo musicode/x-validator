@@ -2,90 +2,56 @@
 
 因为 [parameter](https://github.com/node-modules/parameter) 不够好用，所以按我的想法改进了一版。
 
-文档不全之处，请看 [parameter](https://github.com/node-modules/parameter) 的。
+`parameter` 最大的问题是无法定制错误消息，包括无法 i18n 和每种类型的错误。
+
+从实际使用角度来看，只有具有业务名词的字段才需要错误提示，比如 password 需要提示”密码错误“。
+
+因此，x-validator 把 `id`, `url`, `email`, `password` 等类型从内置类型中删掉了，因为它们属于业务字段。
+
+现在内置字段只有纯粹的语言类型，比如 `int`, `integer`, `string` 等。
 
 ```js
+const {
+  Validator,
+  checkString,
+} = require('x-validator')
 
-// 传一个函数定制错误消息，否则返回错误原因字段，如 required/min/max/pattern 等
-var validator = new Validator(function (key, value, errorReason, rule) {
-    switch (errorReason) {
-        case 'required':
-            return '缺少' + key;
-
-        case 'type':
-            return type + '类型错误';
-
-        case 'empty':
-            return key + '不能为空字符串';
-
-        case 'pattern':
-            return key + '格式错误';
-
-        case 'min':
-            if (typeof value === 'number') {
-                return key + '不能小余' + rule.min;
-            }
-            else {
-                return key + '长度不能小余' + rule.min;
-            }
-
-        case 'max':
-            if (typeof value === 'number') {
-                return key + '不能小余' + rule.min;
-            }
-            else {
-                return key + '长度不能小余' + rule.min;
-            }
-
-        case 'itemType':
-            return key + '数组类型错误';
-    }
-});
+const validator = new Validator()
 
 // 扩展规则
-validator.add('name', function (rule, value) {
+validator.add(
+  {
+    nickname(rule, value) {
 
-  // 没有错误不用返回
-  // 有错误，返回错误的类型，如上面列举的那些
+      rule = {
+        required: rule.required,
+        empty: rule.empty,
+        type: 'string',
+        min: NICKNAME_MIN_LENGTH,
+        max: NICKNAME_MAX_LENGTH,
+      }
 
-})
+      return checkString(rule, value)
 
-// 第三个参数传入错误信息
-// 如果找不到，则调 translate 函数获取
+    }
+  },
+  {
+    nickname: {
+      required: '请输入昵称',
+      empty: '请输入昵称',
+      type: '请输入昵称',
+      min: '昵称请不要少于' + NICKNAME_MIN_LENGTH + '个字',
+      max: '昵称请不要超过' + NICKNAME_MAX_LENGTH + '个字',
+    }
+  }
+)
+
 var errors = validator.validate(
     {
-        name: 'xxx',
-        age: 20,
-        desc: 'xxx'
+        nickname: 'xxx',
     },
     {
-        name: 'string',
-        age: 'int',
-        desc: {
-          // 不允许为空字符串
-          empty: false,
-          type: 'string',
-          min: 5,
-          max: 100
-        }
-    },
-    {
-        name: {
-            required: '缺少 name',
-            empty: '不能为空字符串',
-            type: '必须是字符串',
-        },
-        age: {
-            required: '缺少 name',
-            type: '必须是整型',
-        },
-        desc: {
-            required: '缺少 name',
-            empty: '不能为空字符串',
-            type: '必须是字符串',
-            min: '不能少于5个字符',
-            max: '不能多余100个字符'
-        }
+        nickname: 'nickname',
     }
 );
 // 如果没有错误，errors 为 undefined
@@ -95,3 +61,5 @@ var errors = validator.validate(
   key2: '错误提示'
 }
 ```
+
+文档不全之处，请看 [parameter](https://github.com/node-modules/parameter) 的。
