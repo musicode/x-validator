@@ -50,8 +50,8 @@ var errors = validate(data, {
 * boolean: 布尔值，即 true 或 false
 * bool: 同 boolean
 * enum: 枚举值
-* date: string 类型的扩展类型，格式为 YYYY-MM-DD
-* dateTime: string 类型的扩展类型，格式为 YYYY-MM-DD HH:mm:SS
+* date: string 类型的扩展类型，格式为 `yyyy-MM-dd`
+* dateTime: string 类型的扩展类型，格式为 `yyyy-MM-dd HH:mm:ss`
 * array: 数组类型
 * object：对象类型
 
