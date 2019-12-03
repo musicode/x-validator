@@ -1,19 +1,24 @@
 
 'use strict'
 
+// 日期的格式： 2019-11-11
 const PATTERN_DATE = /^\d{4}\-\d{2}\-\d{2}$/
+// 日期时间的格式：2019-11-11 11:11:11
 const PATTERN_DATE_TIME = /^\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}$/
 
-function type(value) {
+// 获取变量类型，返回小写格式
+function getType(value) {
   return Object.prototype.toString.call(value).toLowerCase().slice(8, -1)
 }
 
 function extend(source, props) {
-  return Object.assign({ }, source, props)
+  for (let key in props) {
+    source[key] = props[key]
+  }
 }
 
-function checkInteger(rule, value) {
-  if (type(value) !== 'number' || value % 1 !== 0) {
+export function checkInteger(rule, value) {
+  if (getType(value) !== 'number' || value % 1 !== 0) {
     return 'type'
   }
 
@@ -26,8 +31,8 @@ function checkInteger(rule, value) {
   }
 }
 
-function checkNumber(rule, value) {
-  if (type(value) !== 'number' || isNaN(value)) {
+export function checkNumber(rule, value) {
+  if (getType(value) !== 'number' || isNaN(value)) {
     return 'type'
   }
 
@@ -40,7 +45,11 @@ function checkNumber(rule, value) {
   }
 }
 
-function checkString(rule, value) {
+export function checkString(rule, value) {
+
+  if (getType(value) !== 'string') {
+    return 'type'
+  }
 
   if (value === '') {
     // 是否允许为空，默认不允许
@@ -50,10 +59,6 @@ function checkString(rule, value) {
     else {
       return 'empty'
     }
-  }
-
-  if (type(value) !== 'string') {
-    return 'type'
   }
 
   if (rule.hasOwnProperty('min') && value.length < rule.min) {
@@ -72,21 +77,29 @@ function checkString(rule, value) {
 
 }
 
-function checkBoolean(rule, value) {
-  if (type(value) !== 'boolean') {
+export function checkBoolean(rule, value) {
+
+  if (getType(value) !== 'boolean') {
     return 'type'
   }
+
+  if (rule.hasOwnProperty('value')
+    && rule.value !== value
+  ) {
+    return 'value'
+  }
+
 }
 
-function checkEnum(rule, value) {
+export function checkEnum(rule, value) {
   if (rule.values.indexOf(value) < 0) {
     return 'type'
   }
 }
 
-function checkArray(rule, value) {
+export function checkArray(rule, value) {
 
-  if (!value || type(value) !== 'array') {
+  if (!value || getType(value) !== 'array') {
     return 'type'
   }
 
@@ -96,7 +109,7 @@ function checkArray(rule, value) {
     return 'min'
   }
 
-  if (rule.hasOwnProperty('max') && length < rule.max) {
+  if (rule.hasOwnProperty('max') && length > rule.max) {
     return 'max'
   }
 
@@ -106,44 +119,52 @@ function checkArray(rule, value) {
   }
 
   for (let i = 0; i < length; i++) {
-    if (type(value[ i ]) !== itemType) {
+    if (getType(value[ i ]) !== itemType) {
       return 'itemType'
     }
   }
 
 }
 
-function checkObject(rule, value) {
-  if (!value || type(value) !== 'object') {
+export function checkObject(rule, value) {
+  if (!value || getType(value) !== 'object') {
     return 'type'
   }
 }
 
-function checkDate(rule, value) {
+export function checkDate(rule, value) {
 
   let props = {
     type: 'string',
     pattern: PATTERN_DATE,
   }
 
-  return checkString(extend(rule, props), value)
+  let newRule = {}
+  extend(newRule, rule)
+  extend(newRule, props)
+
+  return checkString(newRule, value)
 
 }
 
-function checkDateTime(rule, value) {
+export function checkDateTime(rule, value) {
 
   let props = {
     type: 'string',
     pattern: PATTERN_DATE_TIME,
   }
 
-  return checkString(extend(rule, props), value)
+  let newRule = {}
+  extend(newRule, rule)
+  extend(newRule, props)
+
+  return checkString(newRule, value)
 
 }
 
-class Validator {
+export class Validator {
 
-  constructor(translate) {
+  constructor() {
     this.rules = {
       int: checkInteger,
       integer: checkInteger,
@@ -158,15 +179,14 @@ class Validator {
       dateTime: checkDateTime,
     }
     this.messages = { }
-    this.translate = translate
   }
 
   add(name, handler, messages) {
 
-    if (type(name) === 'object') {
-      Object.assign(this.rules, name)
-      if (type(handler) === 'object') {
-        Object.assign(this.messages, handler)
+    if (getType(name) === 'object') {
+      extend(this.rules, name)
+      if (getType(handler) === 'object') {
+        extend(this.messages, handler)
       }
     }
     else {
@@ -184,7 +204,7 @@ class Validator {
 
       let rule = rules[ key ]
 
-      switch (type(rule)) {
+      switch (getType(rule)) {
         case 'string':
           rule = {
             type: rule,
@@ -206,8 +226,8 @@ class Validator {
           break
       }
 
-      if (type(rule) !== 'object' || !rule.type) {
-        throw new TypeError(`${key}'s rule is not found.`)
+      if (getType(rule) !== 'object' || !rule.type) {
+        throw new Error(`${key}'s rule is not found.`)
       }
 
       let errorReason
@@ -228,19 +248,13 @@ class Validator {
       if (errorReason) {
 
         let message = messages && messages[ key ] && messages[ key ][ errorReason ]
-        if (type(message) !== 'string') {
+        if (getType(message) !== 'string') {
           message = this.messages[ rule.type ] && this.messages[ rule.type ][ errorReason ]
         }
 
-        if (type(message) === 'string') {
-          errors[ key ] = message
-        }
-        else if (this.translate) {
-          errors[ key ] = this.translate(key, data[ key ], errorReason, rule)
-        }
-        else {
-          errors[ key ] = errorReason
-        }
+        errors[key] = getType(message) === 'string'
+          ? message
+          : errorReason
 
       }
 
@@ -252,17 +266,4 @@ class Validator {
 
   }
 
-}
-
-module.exports = {
-  Validator,
-  checkInteger,
-  checkNumber,
-  checkString,
-  checkBoolean,
-  checkDate,
-  checkDateTime,
-  checkEnum,
-  checkObject,
-  checkArray,
 }

@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-const Validator = require('../index')
+const { Validator } = require('../dist/index')
 
 const validator = new Validator(
   function (rule, value, errorReason) {
@@ -181,7 +181,118 @@ describe('x-validator', function() {
       assert(errors.name7 === 'pattern')
     })
 
+    it('boolean', function () {
 
+      let errors = validator.validate(
+        {
+          value1: 1,
+          value2: false,
+          value3: true,
+        },
+        {
+          value1: {
+            type: 'boolean'
+          },
+          value2: {
+            type: 'boolean',
+            value: true,
+          },
+          value3: {
+            type: 'boolean',
+            value: true,
+          }
+        }
+      )
+
+      assert(errors.value1 === 'type')
+      assert(errors.value2 === 'value')
+      assert(errors.value3 === undefined)
+    })
+
+    it('enum', function () {
+
+      let errors = validator.validate(
+        {
+          value1: 0,
+          value2: '1',
+          value3: 1,
+        },
+        {
+          value1: {
+            type: 'enum',
+            values: [1, 2]
+          },
+          value2: [1, 2],
+          value3: [1, 2]
+        }
+      )
+
+      assert(errors.value1 === 'type')
+      assert(errors.value2 === 'type')
+      assert(errors.value3 === undefined)
+    })
+
+    it('array', function () {
+
+      let errors = validator.validate(
+        {
+          value1: [1,2,3],
+          value2: 1,
+          value3: [1, 2, 3],
+          value4: [1, 2, 3, 4, 5, 6],
+        },
+        {
+          value1: {
+            type: 'array',
+            itemType: 'string',
+          },
+          value2: {
+            type: 'array'
+          },
+          value3: {
+            type: 'array',
+            min: 4,
+          },
+          value4: {
+            type: 'array',
+            max: 4,
+          }
+        }
+      )
+
+      assert(errors.value1 === 'itemType')
+      assert(errors.value2 === 'type')
+      assert(errors.value3 === 'min')
+      assert(errors.value4 === 'max')
+
+    })
+
+    it('object', function () {
+
+      let errors = validator.validate(
+        {
+          value1: [1, 2, 3],
+          value2: 1,
+          value3: {}
+        },
+        {
+          value1: {
+            type: 'object',
+          },
+          value2: {
+            type: 'object'
+          },
+          value3: {
+            type: 'object',
+          },
+        }
+      )
+
+      assert(errors.value1 === 'type')
+      assert(errors.value2 === 'type')
+      assert(errors.value3 === undefined)
+
+    })
 
 
   })
