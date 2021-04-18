@@ -60,6 +60,7 @@ const errors = validator.validate(
 * `min`: 可选，字符串长度的下限，类似至少输入 n 个字符
 * `max`: 可选，字符串长度的上限，类似最多输入 n 个字符
 * `pattern`: 可选，正则校验
+* `custom`: 可选，支持自定义验证函数
 
 ```js
 {
@@ -67,7 +68,13 @@ const errors = validator.validate(
   empty: true,
   min: 5,
   max: 10000,
-  pattern: /^\d+$/
+  pattern: /^\d+$/,
+  custom: function (value) {
+    if (value.length !== 6) {
+      // 返回错误类型，只要能对应上错误信息中的 key 就行
+      return 'custom'
+    }
+  }
 }
 ```
 

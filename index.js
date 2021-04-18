@@ -75,6 +75,13 @@ export function checkString(rule, value) {
     return 'pattern'
   }
 
+  if (rule.hasOwnProperty('custom')) {
+    const result = rule.custom(value)
+    if (result) {
+      return result
+    }
+  }
+
 }
 
 export function checkBoolean(rule, value) {
