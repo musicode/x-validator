@@ -1,6 +1,6 @@
 /**
- * x-validator.js v0.1.0
- * (c) 2017-2019 musicode
+ * x-validator.js v0.1.2
+ * (c) 2017-2021 musicode
  * Released under the MIT License.
  */
 
@@ -82,6 +82,13 @@
       && !rule.pattern.test(value)
     ) {
       return 'pattern'
+    }
+
+    if (rule.hasOwnProperty('custom')) {
+      var result = rule.custom(value);
+      if (result) {
+        return result
+      }
     }
 
   }
